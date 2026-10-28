@@ -468,36 +468,8 @@ static void apply_window_and_mdct(EncState *s, float *const *audio, int off, int
 
 static void choose_exponents(EncState *s, int ch)
 {
-    const uint16_t *bands = s->exponent_bands[0];
-    int nb = s->exp_nbands;
-    int pos = 0;
-    int last = 36;
-    for (int b = 0; b < nb; b++) {
-        float m = 0;
-        int n = bands[b];
-        for (int i = 0; i < n; i++) {
-            float v = fabsf(s->coefs[ch][pos + i]);
-            if (v > m)
-                m = v;
-        }
-        pos += n;
-        int idx;
-        if (m <= 0)
-            idx = 20;
-        else {
-            idx = (int)lrintf(16.0f * log10f(m));
-            if (idx < -60)
-                idx = -60;
-            if (idx > 95)
-                idx = 95;
-        }
-        if (idx > last + 60)
-            idx = last + 60;
-        if (idx < last - 60)
-            idx = last - 60;
-        s->exp_idx[ch][b] = idx;
-        last = idx;
-    }
+    for (int b = 0; b < s->exp_nbands; b++)
+        s->exp_idx[ch][b] = 20;
 }
 
 static int encode_frame_body(EncState *s, BitWriter *bw, int total_gain, int min_bits)
@@ -815,7 +787,7 @@ static void write_xwma(const char *path, EncState *s, const uint8_t *data, int d
     fclose(f);
 }
 
-static void encode_file(const char *in_path, const char *out_path, int bit_rate)
+void xwma_encode_file(const char *in_path, const char *out_path, int bit_rate)
 {
     AudioBuf audio = read_wav(in_path);
     EncState *s = xmalloc(sizeof(EncState));
@@ -938,7 +910,7 @@ static void encode_file(const char *in_path, const char *out_path, int bit_rate)
            out_path, s->channels, s->sample_rate, bit_rate, nframes, npk, data_bytes);
 }
 
-static int selftest(void)
+int xwma_encoder_selftest(void)
 {
     int fail = 0;
     for (int N = 8; N <= 64; N *= 2) {
@@ -968,19 +940,4 @@ static int selftest(void)
         free(x); free(out); free(ref);
     }
     return fail;
-}
-
-int main(int argc, char **argv)
-{
-    if (argc >= 2 && !strcmp(argv[1], "--selftest"))
-        return selftest();
-    if (argc < 3) {
-        fprintf(stderr, "usage: %s input.wav output.xwma [bitrate]\n", argv[0]);
-        return 1;
-    }
-    int bitrate = (argc > 3) ? atoi(argv[3]) : 96000;
-    if (bitrate < 8000)
-        die("bitrate too low");
-    encode_file(argv[1], argv[2], bitrate);
-    return 0;
 }

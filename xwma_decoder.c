@@ -1264,22 +1264,6 @@ typedef struct {
     int size;
 } FileBuf;
 
-static FileBuf read_file(const char *path)
-{
-    FileBuf fb = { NULL, 0 };
-    FILE *f = fopen(path, "rb");
-    if (!f)
-        return fb;
-    fseek(f, 0, SEEK_END);
-    long sz = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    fb.data = (uint8_t *)malloc(sz + PAD * 2);
-    fb.size = (int)fread(fb.data, 1, sz, f);
-    memset(fb.data + fb.size, 0, PAD * 2);
-    fclose(f);
-    return fb;
-}
-
 static uint32_t rl32(const uint8_t *p)
 {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
@@ -1355,7 +1339,7 @@ static int write_wav(const char *path, float **pcm, int channels, int sample_rat
     return 0;
 }
 
-static int decode_xwma(const uint8_t *data, int size, const char *outpath, int verbose)
+int xwma_decode_xwma(const uint8_t *data, int size, const char *outpath)
 {
     if (size < 12 || memcmp(data, "RIFF", 4) || memcmp(data + 8, "XWMA", 4)) {
         fprintf(stderr, "not an xwma file\n");
@@ -1471,7 +1455,7 @@ static int decode_xwma(const uint8_t *data, int size, const char *outpath, int v
 
     if (dpds && dpds_n) {
         int expect = (int)(dpds[dpds_n - 1] / (channels * bits / 8));
-        if (expect != s->pcm_len && verbose)
+        if (expect != s->pcm_len)
             fprintf(stderr, "dpds sample mismatch: %d vs %d\n", expect, s->pcm_len);
     }
 
@@ -1483,8 +1467,7 @@ static int decode_xwma(const uint8_t *data, int size, const char *outpath, int v
         else
             rc = write_wav(outpath, s->pcm, channels, sample_rate, s->pcm_len);
     }
-    if (verbose)
-        printf("%s: %d ch %d Hz %d samples\n", outpath, channels, sample_rate, s->pcm_len);
+    printf("%s: %d ch %d Hz %d samples\n", outpath, channels, sample_rate, s->pcm_len);
 
     wma_end(s);
     for (int ch = 0; ch < channels; ch++)
@@ -1494,7 +1477,7 @@ static int decode_xwma(const uint8_t *data, int size, const char *outpath, int v
     return rc;
 }
 
-static int selftest(void)
+int xwma_decoder_selftest(void)
 {
     int fail = 0;
     for (int N = 8; N <= 64; N *= 2) {
@@ -1538,70 +1521,4 @@ static int selftest(void)
         free(X); free(out); free(ref); free(H);
     }
     return fail;
-}
-
-int main(int argc, char **argv)
-{
-    if (argc < 2) {
-        fprintf(stderr, "usage: %s <input.xwma> [output.wav]\n", argv[0]);
-        fprintf(stderr, "       %s <input_dir> [output_dir]\n", argv[0]);
-        return 1;
-    }
-    if (!strcmp(argv[1], "--selftest"))
-        return selftest();
-
-    const char *in = argv[1];
-
-    {
-        struct stat st;
-        if (stat(in, &st) == 0 && S_ISDIR(st.st_mode)) {
-            const char *outdir = (argc > 2) ? argv[2] : ".";
-            DIR *d = opendir(in);
-            if (!d) {
-                fprintf(stderr, "cannot open dir %s\n", in);
-                return 1;
-            }
-            int fail = 0;
-            struct dirent *e;
-            while ((e = readdir(d)) != NULL) {
-                size_t l = strlen(e->d_name);
-                if (l < 5 || strcmp(e->d_name + l - 5, ".xwma"))
-                    continue;
-                char ipath[2048], opath[2048], base[1024];
-                snprintf(ipath, sizeof(ipath), "%s/%s", in, e->d_name);
-                snprintf(base, sizeof(base), "%s", e->d_name);
-                base[l - 5] = 0;
-                snprintf(opath, sizeof(opath), "%s/%s.wav", outdir, base);
-                FileBuf fb = read_file(ipath);
-                if (!fb.data) {
-                    fprintf(stderr, "cannot read %s\n", ipath);
-                    fail = 1;
-                    continue;
-                }
-                if (decode_xwma(fb.data, fb.size, opath, 1) < 0)
-                    fail = 1;
-                free(fb.data);
-            }
-            closedir(d);
-            return fail ? 1 : 0;
-        }
-    }
-
-    const char *out = (argc > 2) ? argv[2] : NULL;
-    char outbuf[1024];
-    if (!out) {
-        const char *dot = strrchr(in, '.');
-        size_t n = dot ? (size_t)(dot - in) : strlen(in);
-        snprintf(outbuf, sizeof(outbuf), "%.*s.wav", (int)n, in);
-        out = outbuf;
-    }
-
-    FileBuf fb = read_file(in);
-    if (!fb.data) {
-        fprintf(stderr, "cannot read %s\n", in);
-        return 1;
-    }
-    int rc = decode_xwma(fb.data, fb.size, out, 1);
-    free(fb.data);
-    return rc < 0 ? 1 : 0;
 }

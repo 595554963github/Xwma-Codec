@@ -22,7 +22,7 @@ static const uint8_t exponent_band_44100[3][25] = {
     { 17, 4, 8, 8, 4, 12, 12, 8, 8, 24, 16, 20, 24, 32, 40, 60, 80, 152, },
 };
 
-const uint8_t ff_wma_hgain_hufftab[37][2] = {
+static const uint8_t ff_wma_hgain_hufftab[37][2] = {
     { 25, 10 }, {  2, 10 }, { 27, 10 }, {  0, 10 }, { 31,  9 }, { 30,  9 },
     { 23,  8 }, {  7,  8 }, { 29,  8 }, { 26,  8 }, { 24,  7 }, { 10,  5 },
     { 12,  4 }, { 20,  5 }, { 22,  6 }, {  8,  7 }, { 33, 10 }, { 32, 13 },
@@ -32,7 +32,7 @@ const uint8_t ff_wma_hgain_hufftab[37][2] = {
     { 17,  3 },
 };
 
-const float ff_wma_lsp_codebook[NB_LSP_COEFS][16] = {
+static const float ff_wma_lsp_codebook[NB_LSP_COEFS][16] = {
     {  1.98732877,  1.97944528,  1.97179088,  1.96260549,  1.95038374,  1.93336114,  1.90719232,  1.86191415, },
     {  1.97260000,  1.96083160,  1.94982586,  1.93806164,  1.92516608,  1.91010199,  1.89232331,  1.87149812,
        1.84564818,  1.81358067,  1.77620070,  1.73265264,  1.67907855,  1.60959081,  1.50829650,  1.33120330, },
@@ -1348,7 +1348,7 @@ static const CoefVLCTable coef_vlcs[6] = {
     { sizeof(coef5_huffbits), sizeof(levels5) / 2, coef5_huffcodes, coef5_huffbits, levels5, },
 };
 
-const uint32_t ff_aac_scalefactor_code[121] = {
+static const uint32_t ff_aac_scalefactor_code[121] = {
     0x3ffe8, 0x3ffe6, 0x3ffe7, 0x3ffe5, 0x7fff5, 0x7fff1, 0x7ffed, 0x7fff6,
     0x7ffee, 0x7ffef, 0x7fff0, 0x7fffc, 0x7fffd, 0x7ffff, 0x7fffe, 0x7fff7,
     0x7fff8, 0x7fffb, 0x7fff9, 0x3ffe4, 0x7fffa, 0x3ffe3, 0x1ffef, 0x1fff0,
@@ -1367,7 +1367,7 @@ const uint32_t ff_aac_scalefactor_code[121] = {
     0x7fff3,
 };
 
-const uint8_t ff_aac_scalefactor_bits[121] = {
+static const uint8_t ff_aac_scalefactor_bits[121] = {
     18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19,
     19, 19, 19, 18, 19, 18, 17, 17, 16, 17, 16, 16, 16, 16, 15, 15,
     14, 14, 14, 14, 14, 14, 13, 13, 12, 12, 12, 11, 12, 11, 10, 10,
@@ -1378,7 +1378,7 @@ const uint8_t ff_aac_scalefactor_bits[121] = {
     19, 19, 19, 19, 19, 19, 19, 19, 19,
 };
 
-const uint16_t ff_wma_critical_freqs[25] = {
+static const uint16_t ff_wma_critical_freqs[25] = {
       100,   200,  300,  400,  510,  630,   770,   920,
      1080,  1270, 1480, 1720, 2000, 2320,  2700,  3150,
      3700,  4400, 5300, 6400, 7700, 9500, 12000, 15500,
